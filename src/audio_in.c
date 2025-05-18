@@ -59,7 +59,7 @@ int audio_input_load(const char *wav_path, struct pcm_buffer *out_pcm) {
             if (fread(tag, 1, 4, fp) != 4 || memcmp(tag, "RIFF", 4)) {
                 fprintf(stderr, "[audio] not RIFF\n"); st = AI_ERROR; break;
             }
-            fseek(fp, 4, SEEK_CUR);      /* skip file size */
+            fseek(fp, 4, SEEK_CUR);                      /* skip file size */
             if (fread(tag, 1, 4, fp) != 4 || memcmp(tag, "WAVE", 4)) {
                 fprintf(stderr, "[audio] not WAVE\n"); st = AI_ERROR; break;
             }
@@ -67,38 +67,51 @@ int audio_input_load(const char *wav_path, struct pcm_buffer *out_pcm) {
             /* 2) 迴圈尋找 "fmt " 及 "data" chunk */
             uint16_t num_channels = 0, bits_per_sample = 0;
             uint32_t sample_rate  = 0, data_size = 0;
+
             while (fread(tag, 1, 4, fp) == 4 &&
                 fread(&chunk_size, 4, 1, fp) == 1) {
+
                 if (memcmp(tag, "fmt ", 4) == 0) {
-                    /* 讀 PCM 格式欄位 (我們只關心前 16 bytes) */
+                    /* ---- 改成有檢查 fread 的寫法 ---- */
                     uint16_t audio_fmt;
-                    fread(&audio_fmt,      2, 1, fp);
-                    fread(&num_channels,   2, 1, fp);
-                    fread(&sample_rate,    4, 1, fp);
-                    fseek(fp, 6, SEEK_CUR);           /* skip byteRate & align */
-                    fread(&bits_per_sample, 2, 1, fp);
+                    if (fread(&audio_fmt,      2, 1, fp) != 1 ||
+                        fread(&num_channels,   2, 1, fp) != 1 ||
+                        fread(&sample_rate,    4, 1, fp) != 1) {
+                        fprintf(stderr, "[audio] header read error\n");
+                        st = AI_ERROR; break;
+                    }
+                    fseek(fp, 6, SEEK_CUR);                /* skip byteRate & align */
+                    if (fread(&bits_per_sample, 2, 1, fp) != 1) {
+                        fprintf(stderr, "[audio] header read error\n");
+                        st = AI_ERROR; break;
+                    }
+                    /* --------------------------------- */
                     fseek(fp, chunk_size - 16, SEEK_CUR);  /* skip rest */
+
                 } else if (memcmp(tag, "data", 4) == 0) {
                     data_size = chunk_size;
-                    break;                              /* 找到資料 */
+                    break;                                 /* 找到資料 */
                 } else {
-                    /* 跳過不相關 chunk */
-                    fseek(fp, chunk_size, SEEK_CUR);
+                    fseek(fp, chunk_size, SEEK_CUR);       /* 跳過其他區塊 */
                 }
             }
 
             /* 3) 基本驗證 */
+            if (st == AI_ERROR) break;                     /* 若上面提前設錯誤 */
             if (data_size == 0 || bits_per_sample != 16 ||
                 (num_channels != 1 && num_channels != 2)) {
                 fprintf(stderr, "[audio] unsupported wav\n"); st = AI_ERROR; break;
             }
-            /* 把收集到的 meta 存到臨時變數，後續 state 使用 */
+
+            /* 保存 meta 供後續步驟使用 */
             hdr.sample_rate  = sample_rate;
             hdr.num_channels = num_channels;
             hdr.data_size    = data_size;
+
             st = AI_RESAMPLE;
             break;
         }
+
 
         case AI_RESAMPLE:       /* MVP: 僅接受 16 kHz */
             if (hdr.sample_rate != 16000) {

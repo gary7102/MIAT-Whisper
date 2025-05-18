@@ -1,3 +1,6 @@
+#include <stddef.h>           /* for NULL */
+#include "stub_kernels.h"
+
 typedef enum {
     LOAD_START,
     MAP_TENSOR,

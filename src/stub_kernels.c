@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ggml/ggml.h"
+// #include "ggml.h"
 
 /* ----- 極簡結構 (之後會擴充) ----- */
 struct whisper_context {

@@ -1,13 +1,11 @@
-# Makefile
 CC      := gcc
-CFLAGS  := -O2 -std=c11 -I./src -I./src/ggml/include
-SRC     := src/load_ctx.c src/stub_kernels.c src/ggml/src/ggml.c
+CFLAGS  := -O2 -std=c11 -I./src
+SRC     := src/load_ctx.c src/stub_kernels.c src/test_main.c
 OUT     := build/test_load
 
 $(OUT): $(SRC)
 	@mkdir -p build
-	$(CC) $(CFLAGS) $^ -lm -pthread -o $@
+	$(CC) $(CFLAGS) $^ -o $@
 
 clean:
 	rm -rf build
-

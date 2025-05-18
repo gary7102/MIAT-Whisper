@@ -1,24 +1,47 @@
-# CC      := gcc
-# CFLAGS  := -O2 -std=c11 -I./src
-# SRC     := src/load_ctx.c src/stub_kernels.c src/test_main.c
-# OUT     := build/test_load
+# build/test_load   → 測試 LoadModelCtx stub
+# build/test_audio  → 測試 AudioInput 子模組
+# build/test_mel    → 測試 PCM→Mel 子模組
 
-# $(OUT): $(SRC)
-# 	@mkdir -p build
-# 	$(CC) $(CFLAGS) $^ -o $@
+CC      ?= gcc
+CFLAGS  ?= -O2 -std=c11 -I./src               # 共用編譯旗標
+LDLIBS  ?=
 
-# clean:
-# 	rm -rf build
-############################################################
-CC      := gcc
-CFLAGS  := -O2 -std=c11 -I./src
-# 新增檔案 ▼
-SRC     := src/audio_in.c src/test_audio.c
-OUT     := build/test_audio
+SRC_DIR := src
+BLD_DIR := build
 
-$(OUT): $(SRC)
-	@mkdir -p build
-	$(CC) $(CFLAGS) $^ -o $@
+# ---------- 個別 target ----------
+
+$(BLD_DIR)/test_load: \
+        $(SRC_DIR)/load_ctx.c \
+        $(SRC_DIR)/stub_kernels.c \
+        $(SRC_DIR)/test_load_ctx.c
+	@mkdir -p $(BLD_DIR)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
+
+$(BLD_DIR)/test_audio: \
+        $(SRC_DIR)/audio_in.c \
+        $(SRC_DIR)/test_audio.c
+	@mkdir -p $(BLD_DIR)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
+
+$(BLD_DIR)/test_mel: \
+        $(SRC_DIR)/audio_in.c \
+        $(SRC_DIR)/pcm_to_mel.c \
+        $(SRC_DIR)/test_mel.c
+	@mkdir -p $(BLD_DIR)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
+
+# ---------- 群組 target ----------
+
+all: $(BLD_DIR)/test_load $(BLD_DIR)/test_audio $(BLD_DIR)/test_mel
+
+# 方便只跑單一測試
+test_load :  $(BLD_DIR)/test_load
+test_audio:  $(BLD_DIR)/test_audio
+test_mel  :  $(BLD_DIR)/test_mel
 
 clean:
-	rm -rf build
+	@rm -rf $(BLD_DIR)
+
+.PHONY: all clean test_load test_audio test_mel
+# =====================================================================

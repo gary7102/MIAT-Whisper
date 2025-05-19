@@ -41,6 +41,14 @@ int main(int argc, char **argv) {
     size_t dump = mel.n_frames ? 5 : 0;
     for (size_t i = 0; i < dump; ++i)
         printf("mel[0,%zu] = %.6f\n", i, mel.data[i]);
+    
+    
+    /* print 全矩陣 */
+    // for (size_t i = 10000; i < mel.n_frames * 80; ++i){ 
+    // for(size_t i = 10000; i<11000; ++i){
+    //     printf("mel[0,%zu] = %.6f\n", i, mel.data[i]);
+    // }
+
     /* 求全矩陣均值 */
     double sum = 0.0;
     for (size_t i = 0; i < mel.n_frames * 80; ++i) sum += mel.data[i];
